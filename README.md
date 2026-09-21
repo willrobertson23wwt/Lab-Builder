@@ -154,6 +154,14 @@ matches each host to a golden image, lays out the networks the house way, writes
 `/lab` skill in the learning-path pipeline; any Markdown with a device table
 (host, OS, addresses, role) works with light editing.
 
+### From the learning-path pipeline
+
+The [learning-path-pipeline](https://github.com/willrobertson23wwt/learning-path-pipeline)
+carries a `/lab-build <lab-slug>` skill that does the same from inside a course repo:
+it reads the lab drafted by `/lab`, writes `labs/<slug>/lab.yaml` and `PLAN.md` here,
+runs the plan, and stops. It finds this repo through the installed `lab-builder`
+command or `LAB_BUILDER_ROOT`.
+
 ## lab.yaml in one screen
 
 ```yaml
