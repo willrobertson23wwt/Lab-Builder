@@ -1,0 +1,15 @@
+.env
+*.tfvars
+!*.tfvars.example
+*.tfstate
+*.tfstate.*
+.terraform/
+.terraform.lock.hcl
+crash.log
+__pycache__/
+.DS_Store
+tfplan
+.venv/
+web/node_modules/
+web/dist/
+labs/*/layout.json.bak

@@ -1,0 +1,57 @@
+# Generated from the published lab repo github.com/wwt/linux-broken-path (environment.md, SETUP.md)
+vapp_name: lab-broken-path
+description: "Linux Intermediate: Broken Path (planned by lab-automation)"
+
+networks:
+  Gateway:
+    routed: true
+    cidr: 192.168.2.0/30
+    gateway: 192.168.2.1
+    pool: [192.168.2.2, 192.168.2.2]
+  Lab:
+    cidr: 192.168.10.0/24
+    gateway: 192.168.10.1
+  Management:
+    cidr: 10.0.0.0/24
+    gateway: 10.0.0.1
+
+vms:
+  gateway:
+    template: labs-ubuntu2404-server-latest
+    cpus: 2
+    memory: 4096
+    nics:
+      - {net: Gateway, mode: POOL}          # ens160 WAN 192.168.2.2, default via .1
+      - {net: Lab, ip: 192.168.10.1}        # ens192
+      - {net: Management, ip: 10.0.0.1}     # ens224
+  client01:
+    template: labs-ubuntu2404-server-latest
+    cpus: 2
+    memory: 4096
+    nics:
+      - {net: Lab, ip: 192.168.10.42}       # eth0 (the seeded /26 bug is applied by Ansible, not here)
+      - {net: Management, ip: 10.0.0.10}    # eth1
+  web01:
+    template: labs-ubuntu2404-server-latest
+    cpus: 2
+    memory: 4096
+    nics:
+      - {net: Lab, ip: 192.168.10.80}
+      - {net: Management, ip: 10.0.0.11}
+
+edge_firewall:
+  default_action: drop
+  log_default_action: true
+  rules:
+    - {name: Allow portal SSH in,        protocol: tcp,  source_ip: external, destination_vm: gateway, destination_vm_ip_type: NAT, destination_port: "22"}
+    - {name: Allow portal SSH in 2,      protocol: tcp,  source_ip: external, destination_vm: gateway, destination_vm_ip_type: NAT, destination_port: "2210-2211"}
+    - {name: Allow ping out,             protocol: icmp, source_ip: internal, destination_ip: external}
+    - {name: Allow traceroute out,       protocol: udp,  source_ip: internal, destination_ip: external, destination_port: "33434-33534"}
+    - {name: Allow DNS out (udp),        protocol: udp,  source_ip: internal, destination_ip: external, destination_port: "53"}
+    - {name: Allow DNS out (tcp),        protocol: tcp,  source_ip: internal, destination_ip: external, destination_port: "53"}
+    - {name: Maintenance web out (off),  protocol: tcp,  source_ip: internal, destination_ip: external, destination_port: "80", enabled: false}
+    - {name: Maintenance https out (off),protocol: tcp,  source_ip: internal, destination_ip: external, destination_port: "443", enabled: false}
+
+edge_nat:
+  mode: ip_translation
+  vm: gateway

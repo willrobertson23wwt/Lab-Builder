@@ -1,0 +1,44 @@
+# Written by the lab designer 2026-09-21 13:18
+vapp_name: lab-my-lab
+description: ''
+networks:
+  Gateway:
+    cidr: 192.168.2.0/30
+    gateway: 192.168.2.1
+    routed: true
+    pool: [192.168.2.2, 192.168.2.2]
+  Lab: {cidr: 192.168.10.0/24, gateway: 192.168.10.1}
+  Management: {cidr: 10.0.0.0/24, gateway: 10.0.0.1}
+vms:
+  gateway:
+    template: labs-ubuntu2404-server-latest
+    kind: gateway
+    cpus: 2
+    memory: 4096
+    nics:
+    - {net: Gateway, mode: POOL}
+    - {net: Management, ip: 10.0.0.1}
+  server1:
+    template: labs-ubuntu2404-server-latest
+    kind: server
+    cpus: 2
+    memory: 4096
+    nics:
+    - {net: Lab, mode: DHCP}
+    - {net: Management, mode: DHCP}
+edge_firewall:
+  default_action: drop
+  log_default_action: true
+  rules:
+  - {name: Allow portal SSH in, protocol: tcp, source_ip: external, destination_vm: gateway, destination_vm_ip_type: NAT,
+    destination_port: '22'}
+  - {name: Allow portal SSH in 2, protocol: tcp, source_ip: external, destination_vm: gateway, destination_vm_ip_type: NAT,
+    destination_port: 2210-2211}
+  - {name: Allow ping out, protocol: icmp, source_ip: internal, destination_ip: external}
+  - {name: Allow traceroute out, protocol: udp, source_ip: internal, destination_ip: external, destination_port: 33434-33534}
+  - {name: Allow DNS out, protocol: tcp&udp, source_ip: internal, destination_ip: external, destination_port: '53'}
+  - {name: Maintenance web out (off), protocol: tcp, source_ip: internal, destination_ip: external, destination_port: '80',
+    enabled: false}
+  - {name: Maintenance https out (off), protocol: tcp, source_ip: internal, destination_ip: external, destination_port: '443',
+    enabled: false}
+edge_nat: {mode: ip_translation, vm: gateway}
