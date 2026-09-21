@@ -27,7 +27,7 @@ scripts/setup.sh          # terraform, python venv, web UI build, .env template
 python3 scripts/discover.py           # confirms login; prints the Org VDC -> TF_VAR_vdc
 python3 scripts/inventory.py networks # routed org network -> TF_VAR_org_network
 python3 scripts/inventory.py catalogs # golden-image catalog -> VCD_CATALOG / TF_VAR_catalog
-scripts/ui.sh                         # designer at http://127.0.0.1:8765
+bin/lab-builder install && lab-builder ui   # designer at http://127.0.0.1:8765 (or scripts/ui.sh)
 ```
 
 If `terraform` is not on PATH after setup, it is in `~/.local/bin`.
@@ -41,6 +41,7 @@ If `terraform` is not on PATH after setup, it is in `~/.local/bin`.
 | `terraform/` (root) | milestone 1: power control of one imported vApp |
 | `labs/<slug>/lab.yaml` | the build spec; schema in `labs/README.md` |
 | `labs/<slug>/PLAN.md` | human-readable plan produced by `/lab-plan` |
+| `bin/lab-builder` | CLI: ui, new, list, plan, build, power, destroy, status |
 | `scripts/tf.sh [--lab <slug>] …` | terraform with `.env` loaded |
 | `scripts/discover.py`, `scripts/inventory.py`, `scripts/catalog_match.py` | read-only vCD helpers (stdlib only) |
 | `server/app.py` | FastAPI local service behind the designer (jobs for plan/apply/power/destroy) |

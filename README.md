@@ -116,21 +116,34 @@ Canvas controls: left-drag pans, wheel zooms, **right-drag draws a selection box
 Saved labs live in `labs/<slug>/` (`lab.yaml`, `layout.json`, a `terraform/` folder with
 that lab's state). Commit `lab.yaml` and `layout.json`; state files are gitignored.
 
-## Use it from the command line
+## Standalone use from the command line
+
+Lab Builder does not depend on any other repo or on Claude Code. After
+`scripts/setup.sh`, install the command once:
 
 ```bash
-scripts/tf.sh --lab <slug> plan                   # review
-scripts/tf.sh --lab <slug> apply                  # build (asks for confirmation)
-scripts/tf.sh --lab <slug> apply -var power_on=true
-scripts/tf.sh --lab <slug> destroy
-scripts/vapp-power.sh status|on|off [vApp]        # the imported vApp (TF_VAR_vapp_name)
-python3 scripts/inventory.py vapp <name>          # VMs and NICs of any vApp
-python3 scripts/inventory.py netconfig <name>     # networks, NAT and firewall of any vApp
-python3 scripts/catalog_match.py "Ubuntu 24.04 server" "Windows 11"
+bin/lab-builder install        # symlinks lab-builder into ~/.local/bin
 ```
 
-`scripts/tf.sh` is `terraform -chdir=…` with `.env` loaded, so credentials never
-appear on the command line.
+Then, from anywhere:
+
+```bash
+lab-builder ui                 # start the designer and open it in your browser
+lab-builder new demo           # scaffold labs/demo/lab.yaml with the gateway pattern, edit by hand
+lab-builder plan demo          # terraform plan, read-only
+lab-builder build demo         # apply the reviewed plan; asks you to type the slug
+lab-builder power demo on      # or off
+lab-builder status demo        # live vApp state from vCloud Director
+lab-builder destroy demo       # delete the vApp; asks you to type the slug
+lab-builder list               # labs on disk and whether they are built
+lab-builder vapps              # every vApp in the VDC
+```
+
+`PORT=9000 lab-builder ui` picks another port. The lower-level wrappers are still
+there: `scripts/tf.sh --lab <slug> …` is `terraform -chdir=…` with `.env` loaded,
+`scripts/vapp-power.sh` drives the one imported vApp in `terraform/`, and
+`scripts/inventory.py vapp|netconfig <name>` shows any vApp's VMs, NICs, NAT and
+firewall. `scripts/catalog_match.py "Ubuntu 24.04 server"` maps a phrase to an image.
 
 ## Plan a lab from a lab guide (Claude Code skill)
 
@@ -177,7 +190,8 @@ environment facts: [`DESIGN.md`](DESIGN.md).
 | `terraform/modules/lab-vapp` | the vApp module driven by `lab.yaml` |
 | `terraform/lab-root` | per-lab Terraform root, copied into `labs/<slug>/terraform/` |
 | `terraform/` | power control of one pre-existing, imported vApp |
-| `scripts/` | `setup.sh`, `ui.sh`, `tf.sh`, `vapp-power.sh`, read-only vCD helpers |
+| `bin/lab-builder` | the command line entry point (ui, new, plan, build, power, destroy, …) |
+| `scripts/` | `setup.sh`, `ui.sh`, `tf.sh`, `vapp-power.sh`, `setup_rules.py`, read-only vCD helpers |
 | `labs/` | your labs |
 | `.claude/skills/lab-plan` | the planner skill |
 

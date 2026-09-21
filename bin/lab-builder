@@ -1,0 +1,109 @@
+#!/usr/bin/env bash
+# Lab Builder command line. Run from anywhere once installed (lab-builder install).
+#
+#   lab-builder ui [--no-open]        start the designer and open it in your browser
+#   lab-builder new <slug>            scaffold labs/<slug>/lab.yaml (house pattern) to edit by hand
+#   lab-builder list                  labs on disk and whether they are built
+#   lab-builder plan <slug>           terraform plan (read-only)
+#   lab-builder build <slug>          apply the reviewed plan (asks you to type the slug)
+#   lab-builder power <slug> on|off   power a built lab on or off
+#   lab-builder destroy <slug>        delete the vApp (asks you to type the slug)
+#   lab-builder status [<slug>]       live vApp status from vCloud Director
+#   lab-builder vapps                 every vApp in the VDC
+#   lab-builder setup                 install/refresh dependencies (scripts/setup.sh)
+#   lab-builder install               symlink this command into ~/.local/bin
+set -euo pipefail
+ROOT="$(cd "$(dirname "$(readlink "${BASH_SOURCE[0]}" || echo "${BASH_SOURCE[0]}")")/.." && pwd)"
+PORT="${PORT:-8765}"
+cd "$ROOT"
+
+need_env() { [[ -f .env ]] || { echo "No .env yet. Run: lab-builder setup, then edit .env" >&2; exit 1; }; }
+py() { if [[ -x .venv/bin/python ]]; then .venv/bin/python "$@"; else python3 "$@"; fi; }
+open_url() { command -v open >/dev/null && open "$1" || command -v xdg-open >/dev/null && xdg-open "$1" || echo "open $1"; }
+slug_ok() { [[ "${1:-}" =~ ^[a-z0-9][a-z0-9-]{1,40}$ ]] || { echo "slug must be lowercase letters, digits and dashes" >&2; exit 2; }; }
+confirm() { read -r -p "Type '$1' to confirm: " ans; [[ "$ans" == "$1" ]] || { echo "aborted"; exit 1; }; }
+
+cmd="${1:-help}"; shift || true
+case "$cmd" in
+  ui)
+    need_env
+    [[ -d web/dist ]] || { echo "web UI not built; running setup first"; scripts/setup.sh; }
+    if [[ "${1:-}" != "--no-open" ]]; then
+      ( for _ in $(seq 1 40); do curl -sf "http://127.0.0.1:$PORT/api/labs" >/dev/null 2>&1 && { open_url "http://127.0.0.1:$PORT"; exit 0; }; sleep 0.5; done ) &
+    fi
+    echo "Lab Builder at http://127.0.0.1:$PORT  (Ctrl-C to stop)"
+    exec scripts/ui.sh ;;
+  new)
+    need_env; slug_ok "${1:-}"; d="labs/$1"
+    [[ -e "$d/lab.yaml" ]] && { echo "$d/lab.yaml already exists"; exit 1; }
+    mkdir -p "$d"; cp -R terraform/lab-root "$d/terraform"
+    cat > "$d/lab.yaml" <<YAML
+# Lab Builder spec. Schema: labs/README.md. Build with: lab-builder plan $1 && lab-builder build $1
+vapp_name: lab-$1
+description: ""
+
+networks:
+  Gateway:
+    routed: true
+    cidr: 192.168.2.0/30
+    gateway: 192.168.2.1
+    pool: [192.168.2.2, 192.168.2.2]
+  Lab:
+    cidr: 192.168.10.0/24
+    gateway: 192.168.10.1
+  Management:
+    cidr: 10.0.0.0/24
+    gateway: 10.0.0.1
+
+vms:
+  gateway:
+    kind: gateway
+    template: labs-ubuntu2404-server-latest
+    cpus: 2
+    memory: 4096
+    nics:
+      - {net: Gateway, mode: POOL}
+      - {net: Lab, mode: DHCP}
+      - {net: Management, mode: DHCP}
+  # host1:
+  #   kind: server
+  #   template: labs-ubuntu2404-server-latest
+  #   nics:
+  #     - {net: Lab, ip: 192.168.10.10}
+  #     - {net: Management, mode: DHCP}
+
+edge_nat: {mode: ip_translation, vm: gateway}
+edge_firewall:
+  default_action: drop
+  log_default_action: false
+  rules:
+    - {name: Allow incoming, protocol: any, source_ip: external, destination_ip: internal}
+    - {name: Allow all outgoing traffic, protocol: any, source_ip: internal, destination_ip: external}
+YAML
+    echo "created $d/lab.yaml  (edit it, or open it in the designer with: lab-builder ui)" ;;
+  list)
+    for d in labs/*/; do s=$(basename "$d"); [[ -f "$d/lab.yaml" ]] || continue
+      built=no; [[ -s "$d/terraform/terraform.tfstate" ]] && grep -q '"type": "vcd_vapp"' "$d/terraform/terraform.tfstate" && built=yes
+      printf '%-24s vapp=%-28s built=%s\n' "$s" "$(grep -m1 '^vapp_name:' "$d/lab.yaml" | cut -d: -f2- | tr -d ' ')" "$built"; done ;;
+  plan)    need_env; slug_ok "${1:-}"; scripts/tf.sh --lab "$1" init -input=false >/dev/null; scripts/tf.sh --lab "$1" plan -input=false -out=tfplan ;;
+  build|apply)
+    need_env; slug_ok "${1:-}"
+    [[ -f "labs/$1/terraform/tfplan" ]] || { echo "no reviewed plan; run: lab-builder plan $1"; exit 1; }
+    confirm "$1"; scripts/tf.sh --lab "$1" apply -input=false tfplan; rm -f "labs/$1/terraform/tfplan"
+    echo; py scripts/discover.py --vapp "$(grep -m1 '^vapp_name:' "labs/$1/lab.yaml" | cut -d: -f2- | tr -d ' ')" ;;
+  power)
+    need_env; slug_ok "${1:-}"; [[ "${2:-}" =~ ^(on|off)$ ]] || { echo "usage: lab-builder power <slug> on|off"; exit 2; }
+    scripts/tf.sh --lab "$1" apply -input=false -auto-approve -var "power_on=$([[ $2 == on ]] && echo true || echo false)" ;;
+  destroy) need_env; slug_ok "${1:-}"; confirm "$1"; scripts/tf.sh --lab "$1" destroy -input=false -auto-approve ;;
+  status)
+    need_env
+    if [[ -n "${1:-}" ]]; then py scripts/discover.py --vapp "$(grep -m1 '^vapp_name:' "labs/$1/lab.yaml" | cut -d: -f2- | tr -d ' ')"; else py scripts/discover.py; fi ;;
+  vapps)   need_env; py scripts/discover.py ;;
+  setup)   scripts/setup.sh ;;
+  install)
+    mkdir -p "$HOME/.local/bin"; ln -sf "$ROOT/bin/lab-builder" "$HOME/.local/bin/lab-builder"
+    echo "linked ~/.local/bin/lab-builder -> $ROOT/bin/lab-builder"
+    case ":$PATH:" in *":$HOME/.local/bin:"*) ;; *) echo 'add to your shell profile: export PATH="$HOME/.local/bin:$PATH"';; esac ;;
+  help|-h|--help) sed -n '2,15p' "$0" | sed 's/^# \{0,1\}//' ;;
+  *) echo "unknown command: $cmd"; sed -n '2,15p' "$0" | sed 's/^# \{0,1\}//'; exit 2 ;;
+esac
