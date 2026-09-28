@@ -1,5 +1,8 @@
 # labs/
 
+Everything here except this file is gitignored: drafted labs, plans and per-lab Terraform
+state are your local working data. The committed worked example is `examples/broken-path/`.
+
 One folder per planned lab, written by `/lab-plan <path-to-lab-guide>`:
 
 ```
