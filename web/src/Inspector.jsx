@@ -180,6 +180,7 @@ export function Inspector({ selection, nodes, catalog, onChangeNode, onChangeEdg
             <Field label="Pool end"><input className="mono" value={d.pool?.[1] || ''} onChange={e => onChangeNode(n.id, { pool: [d.pool?.[0] || e.target.value, e.target.value] })} /></Field>
           </div>
         )}
+        <Field label="Guest VLAN allowed (802.1Q tagging)"><input type="checkbox" checked={!!d.guest_vlan} onChange={e => onChangeNode(n.id, { guest_vlan: e.target.checked })} /></Field>
         <Field label="DNS (optional)"><input className="mono" value={d.dns} onChange={e => onChangeNode(n.id, { dns: e.target.value })} /></Field>
         <button className="danger" onClick={() => onDelete()}>Remove network</button>
       </div>

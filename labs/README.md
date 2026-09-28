@@ -38,6 +38,7 @@ networks:                            # vApp networks; exactly one is `routed: tr
   Lab:
     cidr: 192.168.10.0/24
     gateway: 192.168.10.1            # the gateway VM's lab address
+    guest_vlan: true                 # optional; "Guest VLAN Allowed" -> VMs may send 802.1Q-tagged frames
   Management:
     cidr: 10.0.0.0/24
     gateway: 10.0.0.1

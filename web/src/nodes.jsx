@@ -49,6 +49,7 @@ export function NetworkNode({ data, selected }) {
       <div className="title">{data.routed ? 'UPLINK · ' : 'NETWORK · '}{data.name}</div>
       <div className="sub mono">{data.cidr || '?'} · gw {data.gateway || '?'}</div>
       {data.routed && <div className="meta">routed to org network · pool {data.pool ? data.pool.join('–') : 'none'}</div>}
+      {data.guest_vlan && <div className="meta">guest VLAN tagging allowed</div>}
     </div>
   )
 }

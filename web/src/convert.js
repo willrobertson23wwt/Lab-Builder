@@ -10,7 +10,7 @@ export function labToGraph(lab, layout) {
   const nets = Object.entries(lab.networks || {})
   nets.forEach(([name, n], i) => {
     nodes.push({ id: netId(name), type: 'network', position: pos(netId(name), { x: 80 + i * 340, y: 60 }),
-      data: { name, cidr: n.cidr || '', gateway: n.gateway || '', routed: !!n.routed, pool: n.pool || null, dns: n.dns || '' } })
+      data: { name, cidr: n.cidr || '', gateway: n.gateway || '', routed: !!n.routed, pool: n.pool || null, dns: n.dns || '', guest_vlan: !!n.guest_vlan } })
   })
   Object.entries(lab.vms || {}).forEach(([name, vm], i) => {
     nodes.push({ id: vmId(name), type: 'device', position: pos(vmId(name), { x: 80 + i * 280, y: 380 }),
@@ -35,6 +35,7 @@ export function graphToLab(meta, nodes, edges) {
     if (d.routed) net.routed = true
     if (d.pool && d.pool[0]) net.pool = d.pool
     if (d.dns) net.dns = d.dns
+    if (d.guest_vlan) net.guest_vlan = true
     networks[d.name] = net
   })
   const netName = Object.fromEntries(nodes.filter(n => n.type === 'network').map(n => [n.id, n.data.name]))

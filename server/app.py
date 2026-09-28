@@ -117,6 +117,8 @@ def vapp_as_lab(name):
             net["pool"] = [rng[0]["startAddress"], rng[0]["endAddress"]]
         if sc.get("dns1"):
             net["dns"] = sc["dns1"]
+        if c.get("guestVlanAllowed"):
+            net["guest_vlan"] = True
         networks[nc["networkName"]] = net
     vms = {}
     for vm in query("vm", f"container=={v['href']}"):

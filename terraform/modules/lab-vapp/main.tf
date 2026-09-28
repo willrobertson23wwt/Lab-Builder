@@ -1,6 +1,6 @@
 # Data-driven lab vApp. `var.lab` is the parsed labs/<slug>/lab.yaml.
 # Shape (see labs/README.md):
-#   vapp_name, description, org_network, networks{name => {cidr, gateway, routed?, pool?, dns?}},
+#   vapp_name, description, org_network, networks{name => {cidr, gateway, routed?, pool?, dns?, guest_vlan?}},
 #   vms{name => {template, cpus?, memory?, disk_mb?, computer_name?, nics[{net, mode?, ip?}]}},
 #   edge_firewall? { default_action, rules[...] }, port_forwards? [{external_port, vm, nic, internal_port, protocol}]
 
@@ -48,6 +48,8 @@ resource "vcd_vapp_network" "net" {
   gateway       = each.value.gateway
   prefix_length = tonumber(split("/", each.value.cidr)[1])
   dns1          = try(each.value.dns, null)
+  # "Guest VLAN Allowed" in the portal: let VMs on this network send 802.1Q-tagged frames.
+  guest_vlan_allowed = try(each.value.guest_vlan, false)
   # Only the routed network attaches to the org network; the rest are isolated.
   org_network_name = try(each.value.routed, false) ? try(local.lab.org_network, var.default_org_network) : null
 
