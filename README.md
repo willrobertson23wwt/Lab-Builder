@@ -97,7 +97,9 @@ scripts/ui.sh        # then open http://127.0.0.1:8765
 2. **Drag devices** from the palette (Linux server, Linux desktop, Windows Server,
    Windows desktop, Router, Firewall, Hypervisor). Select one to choose its golden image
    and vCPU/memory/disk in the inspector. Drag more **Network segment** tiles for extra
-   subnets.
+   subnets. Selecting a network lets you set its CIDR, gateway, DNS and tick **Guest VLAN
+   allowed** (the portal's "Guest VLAN Allowed" box) when VMs on it need to send
+   802.1Q-tagged frames, e.g. for router-on-a-stick or trunking labs.
 3. **Draw NICs**: drag from a device's top handle to a network's bottom handle. Select
    the link to set its NIC index and address mode (static, pool, DHCP).
 4. **vApp edge**: with nothing selected, the inspector shows the lab's NAT target and
@@ -169,6 +171,7 @@ vapp_name: lab-example
 networks:
   Gateway:    {routed: true, cidr: 192.168.2.0/30, gateway: 192.168.2.1, pool: [192.168.2.2, 192.168.2.2]}
   Lab:        {cidr: 192.168.10.0/24, gateway: 192.168.10.1}
+  Trunk:      {cidr: 192.168.20.0/24, gateway: 192.168.20.1, guest_vlan: true}   # VLAN tagging allowed
 vms:
   gateway:
     template: labs-ubuntu2404-server-latest
