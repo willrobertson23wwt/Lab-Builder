@@ -152,7 +152,8 @@ firewall. `scripts/catalog_match.py "Ubuntu 24.04 server"` maps a phrase to an i
 `/lab-plan <path-to-lab-guide>` reads a guide's `environment.md` and `SETUP.md`,
 matches each host to a golden image, lays out the networks the house way, writes
 `labs/<slug>/lab.yaml` and a readable `PLAN.md`, runs `terraform plan`, and stops.
-`labs/broken-path/` is a worked example. The guide format is the one produced by the
+`examples/broken-path/` is a worked example (`labs/` itself is gitignored: your drafted
+labs, plans and per-lab Terraform state stay on your machine). The guide format is the one produced by the
 `/lab` skill in the learning-path pipeline; any Markdown with a device table
 (host, OS, addresses, role) works with light editing.
 

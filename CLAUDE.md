@@ -39,7 +39,7 @@ If `terraform` is not on PATH after setup, it is in `~/.local/bin`.
 | `terraform/modules/lab-vapp` | the module: vApp, networks, VMs from templates, vApp-edge firewall + NAT, driven by `lab.yaml` |
 | `terraform/lab-root` | per-lab root template; copied to `labs/<slug>/terraform/` (one state per lab) |
 | `terraform/` (root) | milestone 1: power control of one imported vApp |
-| `labs/<slug>/lab.yaml` | the build spec; schema in `labs/README.md` |
+| `labs/<slug>/lab.yaml` | the build spec; schema in `labs/README.md`. `labs/` is gitignored (per-user); the committed example is `examples/broken-path/` |
 | `labs/<slug>/PLAN.md` | human-readable plan produced by `/lab-plan` |
 | `bin/lab-builder` | CLI: ui, new, list, plan, build, power, destroy, status |
 | `scripts/tf.sh [--lab <slug>] …` | terraform with `.env` loaded |

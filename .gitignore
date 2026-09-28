@@ -12,4 +12,6 @@ tfplan
 .venv/
 web/node_modules/
 web/dist/
-labs/*/layout.json.bak
+# labs/ is per-user working data (drafts, plans, one Terraform state per lab); only the schema doc is tracked
+labs/*
+!labs/README.md
