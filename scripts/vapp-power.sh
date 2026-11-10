@@ -2,7 +2,8 @@
 # Usage: scripts/vapp-power.sh on|off|status [vapp-name]   (default: TF_VAR_vapp_name from .env)
 set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-set -a; source "$ROOT/.env"; set +a
+# shellcheck source=scripts/env.sh
+source "$ROOT/scripts/env.sh"; load_env "$ROOT/.env"
 ACTION="${1:-status}"; VAPP="${2:-${TF_VAR_vapp_name:?set TF_VAR_vapp_name in .env or pass a vApp name}}"
 case "$ACTION" in
   on)  "$ROOT/scripts/tf.sh" apply -auto-approve -var "vapp_name=$VAPP" -var power_on=true ;;

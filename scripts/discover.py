@@ -7,7 +7,7 @@ queries CloudAPI for VDCs and the legacy query service for vApps.
   scripts/discover.py            # VDCs and all vApps
   scripts/discover.py --vapp X   # one vApp's status
 """
-import argparse, json, os, ssl, sys, urllib.parse, urllib.request
+import argparse, json, os, re, ssl, sys, urllib.parse, urllib.request
 from pathlib import Path
 
 API_VERSION = "39.0"
@@ -20,7 +20,17 @@ def load_env():
             if not line or line.startswith("#") or "=" not in line:
                 continue
             k, v = line.split("=", 1)
-            os.environ.setdefault(k.strip(), v.strip())
+            k = k.strip().removeprefix("export ").strip()
+            os.environ.setdefault(k, env_value(v))
+
+def env_value(v):
+    """One .env value, never evaluated: quoted -> the literal inside the quotes;
+    unquoted -> trimmed, with a trailing ' #comment' dropped (scripts/env.sh)."""
+    v = v.strip()
+    if v[:1] in ("'", '"'):
+        end = v.find(v[0], 1)
+        return v[1:end] if end != -1 else v[1:]
+    return re.split(r"\s+#", v, maxsplit=1)[0].strip()
 
 def ctx():
     c = ssl.create_default_context()

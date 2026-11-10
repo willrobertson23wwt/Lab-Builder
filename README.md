@@ -57,7 +57,10 @@ service, builds the web UI, downloads the Terraform provider, and creates `.env`
 
 ### Configure `.env`
 
-Open `.env` (it is gitignored and mode 600; never commit it) and set:
+Open `.env` (it is gitignored and mode 600; never commit it) and set the values below.
+Every script reads `.env` literally and never runs it as shell code, so a password with
+`&`, `$` or `;` needs no quoting. Quote a value (`'...'` or `"..."`) only if it starts
+with a quote or contains a space followed by `#` (otherwise that starts a comment).
 
 | variable | meaning |
 |---|---|
@@ -221,6 +224,8 @@ environment facts: [`DESIGN.md`](DESIGN.md).
 
 - **Login fails**: `python3 scripts/discover.py` prints the HTTP error. 401 means wrong
   user/password/org; a TLS error means set `VCD_ALLOW_UNVERIFIED_SSL=true`.
+- **`.env: parse error` or a password cut short**: an older checkout ran `.env` through
+  `source`. Pull the current `scripts/env.sh`; values are now read literally.
 - **Plan wants to replace a vApp you imported**: the resource must declare `org` and
   `vdc` (see `terraform/vapp.tf`).
 - **Template not found**: the catalog in `.env` doesn't hold that name; run

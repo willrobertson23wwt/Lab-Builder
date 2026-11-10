@@ -8,8 +8,8 @@ if [[ ! -f "$ROOT/.env" ]]; then
   echo "Missing $ROOT/.env. Copy .env.example and fill it in." >&2
   exit 1
 fi
-set -a; # shellcheck disable=SC1091
-source "$ROOT/.env"; set +a
+# shellcheck source=scripts/env.sh
+source "$ROOT/scripts/env.sh"; load_env "$ROOT/.env"
 DIR="$ROOT/terraform"
 if [[ "${1:-}" == "--lab" ]]; then
   DIR="$ROOT/labs/$2/terraform"; shift 2
